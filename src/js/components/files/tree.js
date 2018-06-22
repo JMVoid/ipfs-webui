@@ -12,6 +12,9 @@ import RowInput from './tree/row-input'
 import Row from './tree/row'
 import FilesContextMenu from './context-menu'
 
+import Modal from 'react-modal'
+import QRCode from 'qrcode.react'
+
 const fileTarget = {
   drop (props, monitor) {
     Promise
@@ -22,8 +25,26 @@ const fileTarget = {
   }
 }
 
+const customStyles = {
+  content: {
+    top: '50%',
+    left: '50%',
+    right: 'auto',
+    bottom: 'auto',
+    marginRight: '-50%',
+    transform: 'translate(-50%, -50%)'
+  }
+}
+
 class Tree extends Component {
-  state = {copyHash: ''}
+
+  constructor (){
+    super()
+    this.state = {copyHash: '',
+                  showQRCode: false
+                }
+  }
+
 
   _onTmpDirChange = ({target}) => {
     this.props.onTmpDirChange(target.value)
@@ -51,6 +72,16 @@ class Tree extends Component {
 
   _onCopiedHash = () => {
     this.setState({copyHash: ''})
+  }
+
+  _onShowQRCode = () => {
+    this._onCopyHash()
+    this.setState({showQRCode: true})
+  }
+
+  _onCloseQRcode = () => {
+    this._onCopiedHash()
+    this.setState({showQRCode: false})
   }
 
   render () {
@@ -100,8 +131,17 @@ class Tree extends Component {
           selectedFiles={selectedFiles}
           onRemoveDir={this.props.onRemoveDir}
           onMoveDir={this.props.onMoveDir}
-          onCopyHash={this._onCopyHash} />
-        <CopyText text={this.state.copyHash} onCopied={this._onCopiedHash} />
+          onCopyHash={this._onCopyHash}
+          onShowCode={this._onShowQRCode}/>
+
+        {this.state.showQRCode ? (
+          <Modal isOpen={this.state.showQRCode}
+                 onRequestClose={this._onCloseQRcode}
+                 style={customStyles}>
+            <QRCode value={this.state.copyHash} renderAs={'svg'} size={128} level='L'/>
+          </Modal>) : (<CopyText text={this.state.copyHash} onCopied={this._onCopiedHash}/>)
+        }
+
       </div>
     )
   }
