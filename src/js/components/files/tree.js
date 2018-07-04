@@ -2,9 +2,10 @@ import React, {Component} from 'react'
 import PropTypes from 'prop-types'
 import {isEmpty, includes, map} from 'lodash-es'
 import {join} from 'path'
-import {readAsBuffer} from '../../utils/files'
-import {DropTarget} from 'react-dnd'
+// import {readAsBuffer} from '../../utils/files'
+import {DropTarget, DragDropContext} from 'react-dnd'
 import {NativeTypes} from 'react-dnd-html5-backend'
+import HTML5Backend from 'react-dnd-html5-backend'
 import classnames from 'classnames'
 import CopyText from 'react-copy-text'
 
@@ -15,13 +16,28 @@ import FilesContextMenu from './context-menu'
 import Modal from 'react-modal'
 import QRCode from 'qrcode.react'
 
+
+function makeFolderAwareHTML5Backend(manager) {
+  const backend = HTML5Backend(manager);
+  const orig = backend.handleTopDropCapture;
+  backend.handleTopDropCapture = function(event) {
+    backend.currentNativeSource.item.items = event.dataTransfer.items;
+    return orig(event);
+  }
+  return backend;
+}
+
 const fileTarget = {
   drop (props, monitor) {
-    Promise
-      .all(map(monitor.getItem().files, readAsBuffer))
-      .then((files) => {
-        props.onCreateFiles(files)
-      })
+    // const dndItems = monitor.getItem().items
+    // props.root
+    // addFolders(dndItems,)
+    props.onCreateFiles(monitor.getItem().items)
+  //   Promise
+  //     .all(map(monitor.getItem().files, readAsBuffer))
+  //     .then((files) => {
+  //       props.onCreateFiles(files)
+  //     })
   }
 }
 
@@ -112,6 +128,41 @@ class Tree extends Component {
     const {isOver, canDrop, selectedFiles} = this.props
     const className = classnames('files-drop', {isOver, canDrop})
 
+    // return (
+    //   <div>
+    //     <div className={className}>
+    //       {!isOver && canDrop && 'Drag your files here'}
+    //       {isOver && 'Drop your files'}
+    //     </div>
+    //     <div className='files-tree'>
+    //       <div className='files-tree-header'>
+    //         <div className='item'>Name</div>
+    //         <div className='item'>Size</div>
+    //       </div>
+    //       <div className='files-tree-body'>
+    //         {files}
+    //       </div>
+    //     </div>
+    //     <FilesContextMenu
+    //       selectedFiles={selectedFiles}
+    //       onRemoveDir={this.props.onRemoveDir}
+    //       onMoveDir={this.props.onMoveDir}
+    //       onCopyHash={this._onCopyHash}
+    //       onShowCode={this._onShowQRCode}/>
+    //
+    //     {this.state.showQRCode ? (
+    //       <Modal isOpen={this.state.showQRCode}
+    //              onRequestClose={this._onCloseQRcode}
+    //              style={customStyles}>
+    //         <QRCode value={this.state.copyHash} renderAs={'svg'} size={128} level='L'/>
+    //       </Modal>) : (<CopyText text={this.state.copyHash} onCopied={this._onCopiedHash}/>)
+    //     }
+    //
+    //   </div>
+    // )
+
+    // ***************
+
     return this.props.connectDropTarget(
       <div>
         <div className={className}>
@@ -179,7 +230,8 @@ Tree.defaultProps = {
   onRowDoubleClick () {}
 }
 
-export default DropTarget(
+
+export default DragDropContext(makeFolderAwareHTML5Backend)(DropTarget(
   NativeTypes.FILE,
   fileTarget,
   (connect, monitor) => ({
@@ -187,4 +239,16 @@ export default DropTarget(
     isOver: monitor.isOver(),
     canDrop: monitor.canDrop()
   })
-)(Tree)
+)(Tree))
+
+
+// export default DropTarget(
+//   NativeTypes.FILE,
+//   // NativeTypes,
+//   fileTarget,
+//   (connect, monitor) => ({
+//     connectDropTarget: connect.dropTarget(),
+//     isOver: monitor.isOver(),
+//     canDrop: monitor.canDrop()
+//   })
+// )(Tree)

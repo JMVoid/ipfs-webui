@@ -4,8 +4,27 @@ import {isEmpty, map} from 'lodash-es'
 import {readAsBuffer} from '../../utils/files'
 
 import Icon from '../../views/icon'
+// import Modal from 'react-modal'
+// import UploadFolder from './uploadFolder'
+//
+// const customStyles = {
+//   content: {
+//     top: '50%',
+//     left: '50%',
+//     right: 'auto',
+//     bottom: 'auto',
+//     marginRight: '-50%',
+//     transform: 'translate(-50%, -50%)'
+//   }
+// }
 
 class ActionBar extends Component {
+
+  constructor () {
+    super()
+    this.state = {uploadShow:false}
+  }
+
   _onUploadClick = event => {
     this.fileInput.click()
   }
@@ -22,6 +41,14 @@ class ActionBar extends Component {
 
     this.fileInput.value = null
   }
+
+  // _popUpModal = event => {
+  //     this.setState({uploadShow:true})
+  // }
+  //
+  // _closeModal = event => {
+  //   this.setState({uploadShow:false})
+  // }
 
   render () {
     const {
@@ -67,6 +94,12 @@ class ActionBar extends Component {
             Upload
           </a>
         </div>
+        {/*<div className='action-bar-general-actions'>*/}
+          {/*<a onClick={this._popUpModal}>*/}
+            {/*<Icon glyph='upload'/>*/}
+            {/*Upload Dir*/}
+          {/*</a>*/}
+        {/*</div>*/}
         <input
           type='file'
           className='hidden'
@@ -74,6 +107,10 @@ class ActionBar extends Component {
           ref={(input) => { this.fileInput = input }}
           onChange={this._onFilesChange} />
         {fileActions}
+
+        {/*<Modal isOpen={this.state.uploadShow} onRequestClose={this._closeModal} style={customStyles}>*/}
+          {/*<UploadFolder/>*/}
+        {/*</Modal>*/}
       </div>
     )
   }

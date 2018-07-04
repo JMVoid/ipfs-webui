@@ -1,9 +1,9 @@
-import {put, call, select, fork, take, race} from 'redux-saga/effects'
-import {join} from 'path'
+import { put, call, select, fork, take, race, all } from 'redux-saga/effects'
+import { join } from 'path'
 
 import * as actions from '../../actions'
-import {api} from '../../services'
-import {delay} from '../../utils/promise'
+import { api } from '../../services'
+import { delay } from '../../utils/promise'
 
 const {
   files: filesActions,
@@ -63,13 +63,47 @@ export function * watchCreateDir () {
   }
 }
 
+function * copyFolder (root, file) {
+  var output = []
+  yield call(api.files.traverseAction, file, output)
+  let addValue = yield call(api.files.addAction, output)
+  yield call(api.files.copyAction, addValue.rootHash, root, addValue.rootPath)
+}
+
+function * doCopy (root, file) {
+  if (file.webkitGetAsEntry().isDirectory) {
+    console.log('**************************is directory')
+    yield call(copyFolder, root, file)
+  } else {
+    if (file.webkitGetAsEntry().isFile) {
+      console.log('***************************is a file')
+      const fs = file.getAsFile()
+      yield call(api.files.createFile(root, fs))
+    }
+  }
+}
+
 export function * watchCreateFiles () {
   while (true) {
     try {
       const {root, files} = yield take(filesActions.FILES.CREATE_FILES)
       yield put(filesActions.createFiles.request())
-      yield call(api.files.createFiles, root, files)
+      var fileItems = []
+      for (let i = 0; i < files.length; i++) {
+        fileItems.push(files[i])
+      }
+      yield all(fileItems.map(file => call(doCopy, root, file)))
 
+      // yield all(fileItems.map(file => {
+      //   if (file.webkitGetAsEntry().isDirectory) {
+      //     console.log('**************************is directory')
+      //     call(copyFolder, root, file)
+      //   } else {
+      //     if (file.webkitGetAsEntry().isFile) {
+      //       console.log('***************************is a file')
+      //     }
+      //   }
+      // }))
       yield fork(fetchFiles)
       yield put(filesActions.createFiles.success())
     } catch (err) {
